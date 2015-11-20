@@ -3,6 +3,8 @@ var MongoClient = require('mongodb').MongoClient;
 var assert = require('assert');
 var mongoUrl;
 
+console.log('Pagespeed script is working!');
+
 if (process.env.OPENSHIFT_MONGODB_DB_URL) {
     mongoUrl = process.env.OPENSHIFT_MONGODB_DB_URL + 'pagespeed';
 } else {
