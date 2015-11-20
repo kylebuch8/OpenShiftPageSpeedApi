@@ -1,9 +1,13 @@
 var psi = require('psi');
 var MongoClient = require('mongodb').MongoClient;
 var assert = require('assert');
+var config = require('./config');
 var mongoUrl;
+var apiKeys;
 
-console.log('Pagespeed script is working!');
+if (!process.env.PS_API_KEY) {
+    apiKeys = require('./keys');
+}
 
 if (process.env.OPENSHIFT_MONGODB_DB_URL) {
     mongoUrl = process.env.OPENSHIFT_MONGODB_DB_URL + 'pagespeed';
@@ -19,14 +23,25 @@ var insertDocument = function (data, db, callback) {
     });
 };
 
-psi('http://access.redhat.com', {
-    key: process.env.PS_API_KEY || '123456789abcdefghijkl',
-    strategy: 'mobile'
-}).then(function (data) {
-    MongoClient.connect(mongoUrl, function (err, db) {
-        assert.equal(null, err);
-        insertDocument(data, db, function () {
-            db.close();
+var getPageSpeedResult = function (url, strategy) {
+    psi(url, {
+        key: process.env.PS_API_KEY || apiKeys.ps_api_key,
+        strategy: strategy
+    }).then(function (data) {
+        data.date = new Date();
+        data.strategy = strategy;
+
+        MongoClient.connect(mongoUrl, function (err, db) {
+            assert.equal(null, err);
+            insertDocument(data, db, function () {
+                db.close();
+            });
         });
+    });
+};
+
+config.pages.forEach(function (page) {
+    page.strategies.forEach(function (strategy) {
+        getPageSpeedResult(page.url, strategy);
     });
 });
