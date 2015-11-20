@@ -19,8 +19,8 @@
     "url": "https://gitub.com/ramr/nodejs-custom-version-openshift"
   },
   "engines": {
-    "node": ">= 0.6.0",
-    "npm": ">= 1.0.0"
+    "node": ">= 5.0.0",
+    "npm": ">= 3.3.6"
   },
   "dependencies": {
     "hapi": "^11.1.1",
