@@ -3,6 +3,7 @@
 const Hapi = require('hapi');
 const MongoClient = require('mongodb').MongoClient;
 const assert = require('assert');
+const psi = require('./pagespeed.js');
 
 var mongoUrl;
 
