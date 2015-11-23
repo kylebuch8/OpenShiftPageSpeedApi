@@ -33,19 +33,11 @@ var getResults = (db, callback) => {
 
 var getCurrentScore = (db, callback) => {
     var collection = db.collection('results');
-    collection.find({}, {
-        sort: { $natural: -1 },
-        limit: 2
-    }).toArray((err, items) => {
-        if (items != null) {
-            if (items.length === 2) {
-                if (items[0].strategy === 'desktop' && items[1].strategy === 'desktop') {
-                    callback(items[0]);
-                    return;
-                }
-            }
-
-            callback(items);
+    collection.findOne({}, {
+        sort: { $natural: -1 }
+    }, (err, item) => {
+        if (item != null) {
+            callback(item);
         }
     });
 };
