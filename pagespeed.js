@@ -1,6 +1,7 @@
 var psi = require('psi');
 var MongoClient = require('mongodb').MongoClient;
 var assert = require('assert');
+var q = require('q');
 var config = require('./config');
 var mongoUrl;
 var apiKeys;
@@ -24,24 +25,37 @@ var insertDocument = function (data, db, callback) {
 };
 
 var getPageSpeedResult = function (url, strategy) {
-    psi(url, {
+    console.log('getPageSpeedResult');
+    return psi(url, {
         key: process.env.PS_API_KEY || apiKeys.ps_api_key,
         strategy: strategy
     }).then(function (data) {
         data.date = new Date();
         data.strategy = strategy;
 
-        MongoClient.connect(mongoUrl, function (err, db) {
-            assert.equal(null, err);
-            insertDocument(data, db, function () {
-                db.close();
-            });
-        });
+        return data;
     });
 };
 
 config.pages.forEach(function (page) {
+    var functions = [];
+
     page.strategies.forEach(function (strategy) {
-        getPageSpeedResult(page.url, strategy);
+        functions.push(getPageSpeedResult(page.url, strategy));
+    });
+
+    q.all(functions).then(function (data) {
+        var result = {
+            page: page.url,
+            date: new Date(),
+            results: data
+        };
+
+        MongoClient.connect(mongoUrl, function (err, db) {
+            assert.equal(null, err);
+            insertDocument(result, db, function () {
+                db.close();
+            });
+        });
     });
 });
