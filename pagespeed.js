@@ -47,6 +47,7 @@ config.pages.forEach(function (page) {
     q.all(functions).then(function (data) {
         var result = {
             page: page.url,
+            title: data[0].title,
             date: new Date(),
             results: data
         };
