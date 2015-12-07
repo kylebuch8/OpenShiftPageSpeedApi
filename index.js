@@ -25,18 +25,16 @@ var getResults = (db, callback) => {
     collection.find().toArray((err, items) => {
         assert.equal(err, null);
 
-        if (items != null) {
+        if (items !== null) {
             callback(items);
         }
     });
 };
 
 var getCurrentScore = (db, callback) => {
-    var collection = db.collection('results');
-    collection.findOne({}, {
-        sort: { $natural: -1 }
-    }, (err, item) => {
-        if (item != null) {
+    var collection = db.collection('currentScores');
+    collection.find().toArray((err, item) => {
+        if (item !== null) {
             callback(item);
         }
     });
