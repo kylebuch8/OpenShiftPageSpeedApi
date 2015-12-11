@@ -126,37 +126,9 @@ var setCurrentScores = function (pages) {
     return deferred.promise;
 };
 
-var updateScoresOverTime = function (pages) {
-    var deferred = q.defer();
-    var updateRecord = {
-        date: new Date(),
-        pages: []
-    };
-
-    pages.forEach(function (page) {
-        var pageRecord = {
-            page: page.page,
-            title: page.title
-        };
-
-        page.results.forEach(function (result) {
-            pageRecord[result.strategy] = result.ruleGroups.SPEED.score;
-        });
-
-        updateRecord.pages.push(pageRecord);
-    });
-
-    console.log(updateRecord);
-
-    return deferred.promise;
-};
-
 getPageSpeedResults()
 .then(function (pages) {
-    //return setCurrentScores(pages);
-    return updateScoresOverTime(pages);
-}).then(function (pages) {
-    //return updateScoresOverTime(pages);
+    return setCurrentScores(pages);
 }).then(function () {
     console.log('all done!');
 });
