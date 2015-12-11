@@ -3,6 +3,7 @@
 const Hapi = require('hapi');
 const MongoClient = require('mongodb').MongoClient;
 const assert = require('assert');
+const config = require('./config');
 
 var mongoUrl;
 
@@ -40,6 +41,18 @@ var getCurrentScore = (db, callback) => {
     });
 };
 
+var getSiteScores = (page, db, callback) => {
+    db.collection('results', (err, collection) => {
+        collection.find({ page: page }).toArray(function (err, items) {
+            assert.equal(err, null);
+
+            if (items !== null) {
+                callback(items);
+            }
+        });
+    });
+};
+
 server.connection({
     host: process.env.OPENSHIFT_NODEJS_IP || 'localhost',
     port: process.env.OPENSHIFT_NODEJS_PORT || 8000
@@ -61,6 +74,14 @@ server.route({
 
 server.route({
     method: 'GET',
+    path: '/pages',
+    handler: (request, reply) => {
+        return reply(config.pages);
+    }
+});
+
+server.route({
+    method: 'GET',
     path: '/currentscore',
     handler: (request, reply) => {
         MongoClient.connect(mongoUrl, (err, db) => {
@@ -68,6 +89,21 @@ server.route({
             getCurrentScore(db, (data) => {
                 db.close();
                 return reply(data);
+            });
+        });
+    }
+});
+
+server.route({
+    method: 'GET',
+    path: '/scores/{site}',
+    handler: (request, reply) => {
+        MongoClient.connect(mongoUrl, (err, db) => {
+            assert.equal(null, err);
+            console.log(request.params.site);
+            getSiteScores(request.params.site, db, (items) => {
+                db.close();
+                return reply(items);
             });
         });
     }
