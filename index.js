@@ -96,12 +96,11 @@ server.route({
 
 server.route({
     method: 'GET',
-    path: '/scores/{site}',
+    path: '/scores',
     handler: (request, reply) => {
         MongoClient.connect(mongoUrl, (err, db) => {
             assert.equal(null, err);
-            console.log(request.params.site);
-            getSiteScores(request.params.site, db, (items) => {
+            getSiteScores(request.query.site, db, (items) => {
                 db.close();
                 return reply(items);
             });
