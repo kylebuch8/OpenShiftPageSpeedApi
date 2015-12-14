@@ -19,7 +19,7 @@ if (process.env.OPENSHIFT_MONGODB_DB_URL) {
 var insertDocument = function (data, db, callback) {
     var deferred = q.defer();
 
-    db.collection('results3').insertOne(data, function (err, result) {
+    db.collection('results').insertOne(data, function (err, result) {
         assert.equal(err, null);
         console.log('Inserted a document into the results collection.');
         deferred.resolve(result);
