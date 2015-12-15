@@ -56,4 +56,8 @@ The endpoints that are available are:
     http://localhost:8000/scores?site=https://access.redhat.com
 
 ## Adding a Front-End
-I have a pre-built front-end that you can use with this backend at [pagespeed-frontend](https://github.com/kylebuch8/pagespeed-frontend). But you can also create any front-end that will satisfy your needs.
+I have a pre-built front-end that you can use with this backend at [pagespeed-frontend](https://github.com/kylebuch8/pagespeed-frontend).
+
+![Page Speed Viewer](https://cloud.githubusercontent.com/assets/330256/11816907/90674ff4-a320-11e5-8668-25914f0320f2.png)
+
+But you can also create any front-end that will satisfy your needs.
