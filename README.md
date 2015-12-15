@@ -54,3 +54,6 @@ The endpoints that are available are:
 /scores requires a site parameter in the query string that matches one of the sites listed in your config.js.
 
     http://localhost:8000/scores?site=https://access.redhat.com
+
+## Adding a Front-End
+I have a pre-built front-end that you can use with this backend at [pagespeed-frontend](https://github.com/kylebuch8/pagespeed-frontend). But you can also create any front-end that will satisfy your needs.
