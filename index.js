@@ -53,6 +53,54 @@ var getSiteScores = (page, db, callback) => {
     });
 };
 
+//get dates where score has been changed
+var getMilestoneData = (db, callback) => {
+    db.collection('results').aggregate([
+        { $unwind : "$results" },
+        { $match : {"results.id": "https://access.redhat.com/search/#/","results.strategy": "mobile"}   },
+        { $limit : 10 }, { $sort : { "date" : -1 } },
+        { $project: {
+                        "date": 1,
+                        "score": "$results.ruleGroups.SPEED.score"
+
+                    }
+        }
+    ])
+    .toArray(function(err, result) {
+
+        for (var i = 1, max=result.length; i < max; i++) {
+
+            if (result[i].score === result[i-1].score) {
+                result[i-1].state = 0;
+                result[i].state = 1;
+
+            } else {
+                result[i-1].state = 1;
+                result[i].state = 1;
+            }
+        }
+
+        var finalResult = result.filter(function(item) {
+            return item.state === 1;
+        });
+
+        assert.equal(err, null);
+        callback(finalResult);
+   });
+};
+
+var getPageById = (id, db, callback) => {
+    db.collection('results', (err, collection) => {
+        collection.find({ _id: id }).toArray(function (err, items) {
+            assert.equal(err, null);
+
+            if (items !== null) {
+                callback(items);
+            }
+        });
+    });
+};
+
 server.connection({
     host: process.env.OPENSHIFT_NODEJS_IP || 'localhost',
     port: process.env.OPENSHIFT_NODEJS_PORT || 8000
@@ -103,6 +151,35 @@ server.route({
             getSiteScores(request.query.site, db, (items) => {
                 db.close();
                 return reply(items);
+            });
+        });
+    }
+});
+
+server.route({
+    method: 'GET',
+    path: '/milestones',
+    handler: (request, reply) => {
+        MongoClient.connect(mongoUrl, (err, db) => {
+            assert.equal(null, err);
+            getMilestoneData(db, (data) => {
+                db.close();
+                return reply(data);
+            });
+        });
+    }
+});
+
+server.route({
+    method: 'GET',
+    path: '/page/{id}',
+    handler: (request, reply) => {
+        MongoClient.connect(mongoUrl, (err, db) => {
+            assert.equal(null, err);
+            var id = encodeURIComponent(request.params.id);
+            getPageById(id, db, (item) => {
+                db.close();
+                return reply(item);
             });
         });
     }
