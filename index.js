@@ -4,6 +4,7 @@ const Hapi = require('hapi');
 const MongoClient = require('mongodb').MongoClient;
 const assert = require('assert');
 const config = require('./config');
+const _ = require('lodash');
 
 var mongoUrl;
 
@@ -53,16 +54,57 @@ var getSiteScores = (page, db, callback) => {
     });
 };
 
-//get dates where score has been changed
-var getMilestoneData = (db, callback) => {
-    db.collection('results').aggregate([
-        { $unwind : "$results" },
-        { $match : {"results.id": "https://access.redhat.com/search/#/","results.strategy": "mobile"}   },
-        { $limit : 10 }, { $sort : { "date" : -1 } },
-        { $project: {
-                        "date": 1,
-                        "score": "$results.ruleGroups.SPEED.score"
+//gets two object and returns difference object
+var difference = function(a, b) {
+    var r = {};
+    _.each(a, function(v, k) {
+        // If it's equal, return now
+        if(b && (b[k] === v || _.isEqual(v, b[k]))) return;
 
+        // If it's an array, the whole thing should be replaced
+        if(Array.isArray(v)){
+            return r[k] = v;
+        }
+
+        // Using a temp variable for the object diff recursion means we can omit empty objects
+        var t = _.isObject(v) ? _.difference(v, b[k]) : v;
+
+        if((_.isObject(t) && !_.isEmpty(t)) || !_.isObject(t)) {
+            r[k] = t;
+        }
+      });
+
+    return r;
+};
+
+//gets list of the urls that their speed are monitored
+var getUrlList = (db, callback) => {
+    db.collection('results').aggregate([
+        { $unwind : '$results' },
+        { $project: {
+            'url': '$results.id',
+            'strategy': '$results.strategy'
+            }
+        }
+    ])
+    .toArray(function(err, result) {
+        var finalResult =_.uniqBy(result, 'url');
+        assert.equal(err, null);
+        callback(finalResult);
+    });
+};
+
+//gets dates where score has been changed
+var getMilestoneData = (url, strategy, db, callback) => {
+    db.collection('results').aggregate([
+        { $unwind : '$results' },
+        { $match : { 'results.id': decodeURIComponent(url), 'results.strategy': strategy}   },
+        { $limit : 10 },
+        { $sort : { 'date' : -1 } },
+        { $project: {
+                        'date': 1,
+                        'score': '$results.ruleGroups.SPEED.score',
+                        'results': '$results'
                     }
         }
     ])
@@ -78,10 +120,13 @@ var getMilestoneData = (db, callback) => {
                 result[i-1].state = 1;
                 result[i].state = 1;
             }
+
+            result[i-1].scoreDiff = result[i-1].score - result[i].score;
+            result[i-1].pageDiff = difference(result[i].results.pageStats, result[i-1].results.pageStats);
         }
 
         var finalResult = result.filter(function(item) {
-            return item.state === 1;
+            return item.state == 1;
         });
 
         assert.equal(err, null);
@@ -158,11 +203,13 @@ server.route({
 
 server.route({
     method: 'GET',
-    path: '/milestones',
+    path: '/milestones/{url}/{strategy}',
     handler: (request, reply) => {
         MongoClient.connect(mongoUrl, (err, db) => {
             assert.equal(null, err);
-            getMilestoneData(db, (data) => {
+            var url = encodeURIComponent(request.params.url);
+            var strategy = encodeURIComponent(request.params.strategy);
+            getMilestoneData(url, strategy, db, function (data) {
                 db.close();
                 return reply(data);
             });
@@ -178,6 +225,20 @@ server.route({
             assert.equal(null, err);
             var id = encodeURIComponent(request.params.id);
             getPageById(id, db, (item) => {
+                db.close();
+                return reply(item);
+            });
+        });
+    }
+});
+
+server.route({
+    method: 'GET',
+    path: '/siteslist',
+    handler: (request, reply) => {
+        MongoClient.connect(mongoUrl, (err, db) => {
+            assert.equal(null, err);
+            getUrlList(db, (item) => {
                 db.close();
                 return reply(item);
             });
