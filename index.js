@@ -5,6 +5,7 @@ const MongoClient = require('mongodb').MongoClient;
 const assert = require('assert');
 const config = require('./config');
 const _ = require('lodash');
+const ObjectId = require('mongodb').ObjectID;
 
 var mongoUrl;
 
@@ -99,7 +100,6 @@ var getMilestoneData = (url, strategy, db, callback) => {
     db.collection('results').aggregate([
         { $unwind : '$results' },
         { $match : { 'results.id': decodeURIComponent(url), 'results.strategy': strategy}   },
-        { $limit : 10 },
         { $sort : { 'date' : -1 } },
         { $project: {
                         'date': 1,
@@ -109,6 +109,28 @@ var getMilestoneData = (url, strategy, db, callback) => {
         }
     ])
     .toArray(function(err, result) {
+        for (var i = 1, max=result.length; i < max; i++) {
+
+            result[i-1].results.rulePoints = _.map(_.keys(result[i-1].results.formattedResults.ruleResults), function(rule) {
+                var value1,
+                    value2,
+                    diff;
+
+                value1 = result[i-1].results.formattedResults.ruleResults[rule].ruleImpact;
+                value2 = result[i].results.formattedResults.ruleResults[rule].ruleImpact;
+                diff = parseFloat(value1) - parseFloat(value2);
+
+                return {
+                    key: rule,
+                    value: value1,
+                    ruleDiff: diff
+                };
+            });
+
+            result[i-1].results.rulePoints = result[i-1].results.rulePoints.filter(function(item) {
+                return item.value !== 0;
+            });
+        }
 
         for (var i = 1, max=result.length; i < max; i++) {
 
@@ -120,6 +142,15 @@ var getMilestoneData = (url, strategy, db, callback) => {
                 result[i-1].state = 1;
                 result[i].state = 1;
             }
+
+            result[i-1].ruleDiff = {};
+            _.forIn(_.keys(result[i-1].results.formattedResults.ruleResults), function(rule) {
+
+                var value1 =  result[i-1].results.formattedResults.ruleResults[rule].ruleImpact;
+                var value2 =  result[i].results.formattedResults.ruleResults[rule].ruleImpact;
+
+                result[i-1].ruleDiff[rule] = parseFloat(value1) - parseFloat(value1);
+            });
 
             result[i-1].scoreDiff = result[i-1].score - result[i].score;
             result[i-1].pageDiff = difference(result[i].results.pageStats, result[i-1].results.pageStats);
@@ -136,7 +167,7 @@ var getMilestoneData = (url, strategy, db, callback) => {
 
 var getPageById = (id, db, callback) => {
     db.collection('results', (err, collection) => {
-        collection.find({ _id: id }).toArray(function (err, items) {
+        collection.find({ _id: ObjectId(id) }).toArray(function (err, items) {
             assert.equal(err, null);
 
             if (items !== null) {
