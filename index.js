@@ -78,13 +78,12 @@ var difference = function(a, b) {
     return r;
 };
 
-//gets list of the urls that their speed are monitored
+//gets list of the unique urls
 var getUrlList = (db, callback) => {
     db.collection('results').aggregate([
         { $unwind : '$results' },
         { $project: {
-            'url': '$results.id',
-            'strategy': '$results.strategy'
+            'url': '$results.id'
             }
         }
     ])
@@ -96,10 +95,21 @@ var getUrlList = (db, callback) => {
 };
 
 //gets dates where score has been changed
-var getMilestoneData = (url, strategy, db, callback) => {
+var getMilestoneData = (urlId, strategy, db, callback) => {
+
+
+    var url;
+
+    for (let c = 0, max=config.pages.length; c < max; c++) {
+        if (config.pages[c]['id'] === urlId) {
+            url = config.pages[c]['url'];
+            break;
+        }
+    }
+
     db.collection('results').aggregate([
         { $unwind : '$results' },
-        { $match : { 'results.id': decodeURIComponent(url), 'results.strategy': strategy}   },
+        { $match : { 'results.id': url, 'results.strategy': strategy}   },
         { $sort : { 'date' : -1 } },
         { $project: {
                         'date': 1,
@@ -109,8 +119,7 @@ var getMilestoneData = (url, strategy, db, callback) => {
         }
     ])
     .toArray(function(err, result) {
-        for (var i = 1, max=result.length; i < max; i++) {
-
+        for (let i = 1, max=result.length; i < max; i++) {
             result[i-1].results.rulePoints = _.map(_.keys(result[i-1].results.formattedResults.ruleResults), function(rule) {
                 var value1,
                     value2,
@@ -132,7 +141,7 @@ var getMilestoneData = (url, strategy, db, callback) => {
             });
         }
 
-        for (var i = 1, max=result.length; i < max; i++) {
+        for (let i = 1, max=result.length; i < max; i++) {
 
             if (result[i].score === result[i-1].score) {
                 result[i-1].state = 0;
@@ -234,13 +243,14 @@ server.route({
 
 server.route({
     method: 'GET',
-    path: '/milestones/{url}/{strategy}',
+    path: '/milestones/{strategy}/{urlId}',
     handler: (request, reply) => {
         MongoClient.connect(mongoUrl, (err, db) => {
             assert.equal(null, err);
-            var url = encodeURIComponent(request.params.url);
-            var strategy = encodeURIComponent(request.params.strategy);
-            getMilestoneData(url, strategy, db, function (data) {
+            var urlId = request.params.urlId;
+            var strategy = request.params.strategy;
+
+            getMilestoneData(urlId, strategy, db, function (data) {
                 db.close();
                 return reply(data);
             });
@@ -263,17 +273,21 @@ server.route({
     }
 });
 
+//list of the unique urls form config file
 server.route({
     method: 'GET',
     path: '/siteslist',
     handler: (request, reply) => {
-        MongoClient.connect(mongoUrl, (err, db) => {
-            assert.equal(null, err);
-            getUrlList(db, (item) => {
-                db.close();
-                return reply(item);
-            });
-        });
+        return reply(config.pages);
+    }
+});
+
+//list of the unique urls form db
+server.route({
+    method: 'GET',
+    path: '/dbsiteslist',
+    handler: (request, reply) => {
+        return reply(config.pages);
     }
 });
 
