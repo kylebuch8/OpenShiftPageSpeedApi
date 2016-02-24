@@ -17,15 +17,17 @@ OpenShift is a big help for this project since it hosts my code and runs a daily
 
     module.exports = keys;
 
-Also you'll need to set up config.js to your liking.
+Also you'll need to set up config.js to your liking. The id should be a unique number.
 
     var config = {
         pages: [
             {
+                id: '1',
                 url: 'https://access.redhat.com',
                 strategies: ['desktop', 'mobile']
             },
             {
+                id: '2',
                 url: 'https://access.redhat.com/search',
                 strategies: ['desktop', 'mobile']
             }
