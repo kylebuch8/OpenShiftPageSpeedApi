@@ -273,21 +273,19 @@ server.route({
     }
 });
 
-//list of the unique urls form config file
-server.route({
-    method: 'GET',
-    path: '/siteslist',
-    handler: (request, reply) => {
-        return reply(config.pages);
-    }
-});
 
 //list of the unique urls form db
 server.route({
     method: 'GET',
     path: '/dbsiteslist',
     handler: (request, reply) => {
-        return reply(config.pages);
+        MongoClient.connect(mongoUrl, (err, db) => {
+            assert.equal(null, err);
+            getUrlList(db, (item) => {
+                db.close();
+                return reply(item);
+            });
+        });
     }
 });
 
