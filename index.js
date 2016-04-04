@@ -12,7 +12,7 @@ var mongoUrl;
 if (process.env.OPENSHIFT_MONGODB_DB_URL) {
     mongoUrl = process.env.OPENSHIFT_MONGODB_DB_URL + 'pagespeed';
 } else {
-    mongoUrl = 'mongodb://admin:_LGTb9C5QFTf@localhost:27017/pagespeed';
+    mongoUrl = 'mongodb://localhost:27017/pagespeed';
 }
 
 const server = new Hapi.Server({
