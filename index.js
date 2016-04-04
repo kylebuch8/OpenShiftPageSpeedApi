@@ -12,7 +12,7 @@ var mongoUrl;
 if (process.env.OPENSHIFT_MONGODB_DB_URL) {
     mongoUrl = process.env.OPENSHIFT_MONGODB_DB_URL + 'pagespeed';
 } else {
-    mongoUrl = 'mongodb://localhost:27017/pagespeed';
+    mongoUrl = 'mongodb://admin:_LGTb9C5QFTf@localhost:27017/pagespeed';
 }
 
 const server = new Hapi.Server({
@@ -25,11 +25,11 @@ const server = new Hapi.Server({
 
 var getResults = (db, callback) => {
     var collection = db.collection('results');
-    collection.find({}, { limit: 30 }).toArray((err, items) => {
+    collection.find({}, { limit: 30, sort: [['date', 'desc']] }).toArray((err, items) => {
         assert.equal(err, null);
 
         if (items !== null) {
-            callback(items);
+            callback(items.reverse());
         }
     });
 };
@@ -45,11 +45,11 @@ var getCurrentScore = (db, callback) => {
 
 var getSiteScores = (page, db, callback) => {
     db.collection('results', (err, collection) => {
-        collection.find({ page: page }, { limit: 30 }).toArray(function (err, items) {
+        collection.find({ page: page }, { limit: 30, sort: [['date', 'desc']] }).toArray(function (err, items) {
             assert.equal(err, null);
 
             if (items !== null) {
-                callback(items);
+                callback(items.reverse());
             }
         });
     });
