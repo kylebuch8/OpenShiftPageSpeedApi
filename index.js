@@ -25,7 +25,7 @@ const server = new Hapi.Server({
 
 var getResults = (db, callback) => {
     var collection = db.collection('results');
-    collection.find().toArray((err, items) => {
+    collection.find({}, { limit: 30 }).toArray((err, items) => {
         assert.equal(err, null);
 
         if (items !== null) {
@@ -45,7 +45,7 @@ var getCurrentScore = (db, callback) => {
 
 var getSiteScores = (page, db, callback) => {
     db.collection('results', (err, collection) => {
-        collection.find({ page: page }).toArray(function (err, items) {
+        collection.find({ page: page }, { limit: 30 }).toArray(function (err, items) {
             assert.equal(err, null);
 
             if (items !== null) {
@@ -176,7 +176,7 @@ var getMilestoneData = (urlId, strategy, db, callback) => {
 
 var getPageById = (id, db, callback) => {
     db.collection('results', (err, collection) => {
-        collection.find({ _id: ObjectId(id) }).toArray(function (err, items) {
+        collection.find({ _id: ObjectId(id) }, { limit: 30 }).toArray(function (err, items) {
             assert.equal(err, null);
 
             if (items !== null) {

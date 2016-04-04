@@ -22,6 +22,9 @@
     "node": ">= 5.0.0",
     "npm": ">= 3.3.6"
   },
+  "scripts": {
+      "start": "nodemon index.js"
+  },
   "dependencies": {
     "hapi": "^11.1.1",
     "lodash": "^4.0.1",
@@ -29,7 +32,9 @@
     "psi": "^2.0.2",
     "q": "^1.4.1"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "nodemon": "^1.9.1"
+  },
   "bundleDependencies": [],
   "private": true,
   "main": "index.js"
