@@ -219,6 +219,11 @@ server.route({
     handler: (request, reply) => {
         MongoClient.connect(mongoUrl, (err, db) => {
             assert.equal(null, err);
+
+            if (err) {
+                return reply(err);
+            }
+
             getCurrentScore(db, (data) => {
                 db.close();
                 return reply(data);
